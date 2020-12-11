@@ -10,4 +10,4 @@ RUN unzip awscliv2.zip
 RUN ./aws/install
 RUN rm awscliv2.zip
 
-RUN yarn global add @aws-amplify/cli
+RUN npm i -g @aws-amplify/cli
