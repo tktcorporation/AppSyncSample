@@ -1,0 +1,10 @@
+version: "3.7"
+services:
+    work:
+        build: .
+        container_name: work
+        restart: always
+        working_dir: /usr/src/
+        tty: true
+        volumes:
+            - .:/usr/src/
