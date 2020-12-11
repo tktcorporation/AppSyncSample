@@ -1,0 +1,228 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+    awsRegion:
+        Type: String
+        Default: ap-northeast-1
+    awsAccount:
+        Type: String
+        Default: set-your-account-here
+Resources:
+    AppSyncDynamoRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - appsync.amazonaws.com
+                      Action:
+                          - "sts:AssumeRole"
+            Path: /cloudformation/
+            RoleName:
+                Fn::Join:
+                    - ""
+                    - - !Ref awsRegion
+                      - "-appsync-dynamodb-role"
+            Policies:
+                - PolicyName: test-appsync-dynamodb
+                  PolicyDocument:
+                      Version: 2012-10-17
+                      Statement:
+                          - Effect: Allow
+                            Action:
+                                - "dynamodb:DeleteItem"
+                                - "dynamodb:GetItem"
+                                - "dynamodb:PutItem"
+                                - "dynamodb:Query"
+                                - "dynamodb:Scan"
+                                - "dynamodb:UpdateItem"
+                            Resource:
+                                - Fn::Join:
+                                      - ""
+                                      - - "arn:aws:dynamodb:"
+                                        - !Ref awsRegion
+                                        - ":"
+                                        - !Ref awsAccount
+                                        - ":table/users"
+                                - Fn::Join:
+                                      - ""
+                                      - - "arn:aws:dynamodb:"
+                                        - !Ref awsRegion
+                                        - ":"
+                                        - !Ref awsAccount
+                                        - ":table/users/*"
+    UserTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+            AttributeDefinitions:
+                - AttributeName: "id"
+                  AttributeType: "S"
+            KeySchema:
+                - AttributeName: "id"
+                  KeyType: "HASH"
+            ProvisionedThroughput:
+                ReadCapacityUnits: "5"
+                WriteCapacityUnits: "5"
+            TableName: "users"
+    AppSyncGraphqlAPI:
+        Type: "AWS::AppSync::GraphQLApi"
+        Properties:
+            Name: GraphqlAPI #required
+            AuthenticationType: "API_KEY" #required
+    AppSyncAPIKey:
+        Type: AWS::AppSync::ApiKey
+        DependsOn: [AppSyncGraphqlAPI]
+        Properties:
+            ApiId:
+                Fn::GetAtt: [AppSyncGraphqlAPI, ApiId]
+            Expires: 1609426799 # 2020-12-31 23:59:59（秒単位）
+    #  Schema定義
+    AppSyncSchema:
+        Type: AWS::AppSync::GraphQLSchema
+        DependsOn: [AppSyncGraphqlAPI]
+        Properties:
+            ApiId:
+                Fn::GetAtt: [AppSyncGraphqlAPI, ApiId]
+            Definition: |
+                input CreateUserInput {
+                    name: String!
+                }
+                input DeleteUserInput {
+                    id: ID!
+                }
+                type Mutation {
+                    createUser(input: CreateUserInput!): User
+                    updateUser(input: UpdateUserInput!): User
+                    deleteUser(input: DeleteUserInput!): User
+                }
+                type Query {
+                    getUser(id: ID!): User
+                }
+                input UpdateUserInput {
+                    id: ID!
+                    name: String!
+                }
+                type User {
+                    id: ID!
+                    name: String!
+                }
+                schema {
+                    query: Query
+                    mutation: Mutation
+                }
+    # DataSource定義
+    AppSyncUserDataSource:
+        Type: AWS::AppSync::DataSource
+        DependsOn: [AppSyncGraphqlAPI, AppSyncDynamoRole, UserTable]
+        Properties:
+            ApiId:
+                Fn::GetAtt: [AppSyncGraphqlAPI, ApiId]
+            Name: "users"
+            Type: "AMAZON_DYNAMODB"
+            ServiceRoleArn:
+                Fn::GetAtt: [AppSyncDynamoRole, Arn]
+            DynamoDBConfig:
+                AwsRegion:
+                    Ref: awsRegion
+                TableName: users
+    # Resolver定義
+    # Mutation
+    ## CreateUser
+    AppSyncCreateUserResolver:
+        Type: AWS::AppSync::Resolver
+        DependsOn: [AppSyncGraphqlAPI, AppSyncUserDataSource]
+        Properties:
+            ApiId:
+                Fn::GetAtt: [AppSyncGraphqlAPI, ApiId]
+            TypeName: Mutation
+            FieldName: createUser
+            DataSourceName:
+                Fn::GetAtt: [AppSyncUserDataSource, Name]
+            RequestMappingTemplate: |
+                {
+                    "version" : "2017-02-28",
+                    "operation" : "PutItem",
+                    "key" : {
+                        "id": $util.dynamodb.toDynamoDBJson($util.autoId()),
+                    },
+                    "attributeValues" : $util.dynamodb.toMapValuesJson($ctx.args.input),
+                    "condition": {
+                        "expression": "attribute_not_exists(#id)",
+                        "expressionNames": {
+                            "#id": "id",
+                        }
+                    }
+                }
+            ResponseMappingTemplate: $util.toJson($ctx.result)
+    ## UpdateUser
+    AppSyncUpdateUserResolver:
+        Type: AWS::AppSync::Resolver
+        DependsOn: [AppSyncGraphqlAPI, AppSyncUserDataSource]
+        Properties:
+            ApiId:
+                Fn::GetAtt: [AppSyncGraphqlAPI, ApiId]
+            TypeName: Mutation
+            FieldName: updateUser
+            DataSourceName:
+                Fn::GetAtt: [AppSyncUserDataSource, Name]
+            RequestMappingTemplate: |
+                {
+                    "version" : "2017-02-28",
+                    "operation" : "UpdateItem",
+                    "key" : {
+                        "id" : $util.dynamodb.toDynamoDBJson($ctx.args.input.id)
+                    },
+                    "update" : {
+                        "expression" : "SET #n = :name",
+                        "expressionNames": {
+                            "#n": "name"
+                        },
+                        "expressionValues": {
+                            ":name" : $util.dynamodb.toDynamoDBJson($ctx.args.input.name)
+                        }
+                    }
+                }
+            ResponseMappingTemplate: $util.toJson($ctx.result)
+    ## DeleteUser
+    AppSyncDeleteUserResolver:
+        Type: AWS::AppSync::Resolver
+        DependsOn: [AppSyncGraphqlAPI, AppSyncUserDataSource]
+        Properties:
+            ApiId:
+                Fn::GetAtt: [AppSyncGraphqlAPI, ApiId]
+            TypeName: Mutation
+            FieldName: deleteUser
+            DataSourceName:
+                Fn::GetAtt: [AppSyncUserDataSource, Name]
+            RequestMappingTemplate: |
+                {
+                    "version" : "2017-02-28",
+                    "operation" : "DeleteItem",
+                    "key" : {
+                        "id" : $util.dynamodb.toDynamoDBJson($ctx.args.input.id),
+                    }
+                }
+            ResponseMappingTemplate: $util.toJson($ctx.result)
+    # Query
+    ## GetUser
+    AppSyncGetUserResolver:
+        Type: AWS::AppSync::Resolver
+        DependsOn: [AppSyncGraphqlAPI, AppSyncUserDataSource]
+        Properties:
+            ApiId:
+                Fn::GetAtt: [AppSyncGraphqlAPI, ApiId]
+            TypeName: Query
+            FieldName: getUser
+            DataSourceName:
+                Fn::GetAtt: [AppSyncUserDataSource, Name]
+            RequestMappingTemplate: |
+                {
+                    "version": "2017-02-28",
+                    "operation": "GetItem",
+                    "key": {
+                        "id": $util.dynamodb.toDynamoDBJson($ctx.args.id),
+                    }
+                }
+            ResponseMappingTemplate: $util.toJson($ctx.result)
