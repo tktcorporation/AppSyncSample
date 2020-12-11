@@ -8,3 +8,5 @@
     - https://dev.classmethod.jp/articles/cloudformation-s3bucket-type/
 - android 用
     - https://qiita.com/moonum/items/d0f271b5c78e89787940
+- setup android project
+    - https://docs.amplify.aws/start/getting-started/setup/q/integration/android
