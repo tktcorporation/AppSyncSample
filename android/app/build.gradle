@@ -49,4 +49,6 @@ dependencies {
   implementation 'com.amplifyframework:aws-api:1.6.4'
   // Support for Java 8 features
   coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.0.10'
+  // for graphql
+  implementation 'com.amplifyframework:core:1.6.4'
 }
