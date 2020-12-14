@@ -1,15 +1,15 @@
 {
   "dev": {
     "awscloudformation": {
-      "AuthRoleName": "amplify-appsyncsample-dev-51101-authRole",
-      "UnauthRoleArn": "arn:aws:iam::520430760589:role/amplify-appsyncsample-dev-51101-unauthRole",
-      "AuthRoleArn": "arn:aws:iam::520430760589:role/amplify-appsyncsample-dev-51101-authRole",
+      "AuthRoleName": "amplify-android-dev-194859-authRole",
+      "UnauthRoleArn": "arn:aws:iam::520430760589:role/amplify-android-dev-194859-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::520430760589:role/amplify-android-dev-194859-authRole",
       "Region": "ap-northeast-1",
-      "DeploymentBucketName": "amplify-appsyncsample-dev-51101-deployment",
-      "UnauthRoleName": "amplify-appsyncsample-dev-51101-unauthRole",
-      "StackName": "amplify-appsyncsample-dev-51101",
-      "StackId": "arn:aws:cloudformation:ap-northeast-1:520430760589:stack/amplify-appsyncsample-dev-51101/444cbae0-3b6f-11eb-b5a9-0aa2cd508fc6",
-      "AmplifyAppId": "d2wd9ycvjuafbk"
+      "DeploymentBucketName": "amplify-android-dev-194859-deployment",
+      "UnauthRoleName": "amplify-android-dev-194859-unauthRole",
+      "StackName": "amplify-android-dev-194859",
+      "StackId": "arn:aws:cloudformation:ap-northeast-1:520430760589:stack/amplify-android-dev-194859/6a7f5f50-3e45-11eb-96d4-06ffc2bc5714",
+      "AmplifyAppId": "d2gj00ap0ah5h8"
     }
   }
 }

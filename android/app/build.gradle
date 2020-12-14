@@ -23,9 +23,6 @@ android {
       proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
     }
   }
-  buildFeatures {
-    viewBinding true
-  }
   compileOptions {
     // Support for Java 8 features
     coreLibraryDesugaringEnabled true
@@ -48,10 +45,9 @@ dependencies {
   androidTestImplementation 'androidx.test.ext:junit:1.1.2'
   androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
-  // for amplify
-  implementation 'com.amplifyframework:aws-api:1.6.4'
+  // Amplify core dependency
+  implementation 'com.amplifyframework:core:1.6.4'
+
   // Support for Java 8 features
   coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.0.10'
-  // for graphql
-  implementation 'com.amplifyframework:core:1.6.4'
 }
