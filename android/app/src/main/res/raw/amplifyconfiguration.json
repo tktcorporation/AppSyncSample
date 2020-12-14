@@ -1,0 +1,14 @@
+{
+  "api": {
+    "plugins": {
+      "awsAPIPlugin": {
+        "GraphqlAPI": {
+          "endpointType": "GraphQL",
+          "endpoint": "https://icqofpqjtrh5pcsfxmrlra5ife.appsync-api.ap-northeast-1.amazonaws.com/graphql",
+          "region": "ap-northeast-1",
+          "authorizationType": "API_KEY"
+        }
+      }
+    }
+  }
+}
