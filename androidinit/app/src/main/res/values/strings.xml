@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">AppSyncSample</string>
+    <string name="create">create</string>
 </resources>
